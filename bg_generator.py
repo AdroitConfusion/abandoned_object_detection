@@ -1,7 +1,10 @@
 import cv2
+from os import path
 
 # Path to the video file
-video_path = 'AVSS_E2.avi'
+video_folder = 'examples/example 3'
+video_path = path.join(video_folder, 'video.avi')
+bg_path = path.join(video_folder, 'bg.png')
 
 # Initialize the video capture object
 cap = cv2.VideoCapture(video_path)
@@ -17,8 +20,8 @@ ret, frame = cap.read()
 # Check if the frame was read correctly
 if ret:
     # Save the frame as an image file
-    cv2.imwrite('first_frame.jpg', frame)
-    print("First frame saved as 'first_frame.jpg'")
+    cv2.imwrite(bg_path, frame)
+    print("First frame saved as 'bg.png'")
 else:
     print("Error: Could not read the first frame.")
 
