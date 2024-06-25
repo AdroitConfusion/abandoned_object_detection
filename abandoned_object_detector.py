@@ -2,6 +2,7 @@
 import numpy as np
 import cv2
 from tracker import *
+from os import path
 
 # Function to put text on an image
 def put_text(image, text, position=(30, 100)):
@@ -21,8 +22,10 @@ def apply_train_mask(frame):
 
 example_no = 'example 1'
 base_path = 'examples'
-background_path = fr"{base_path}/{example_no}/bg.png"
-video_path = fr"{base_path}/{example_no}/video.avi"
+# background_path = fr"{base_path}/{example_no}/bg.png"
+# video_path = fr"{base_path}/{example_no}/video.avi"
+background_path = path.join(base_path, example_no, 'bg.png')
+video_path = path.join(base_path, example_no, 'video.avi')
 
 background = cv2.imread(background_path)
 background = apply_train_mask(background)
@@ -33,7 +36,8 @@ background_gray = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
 # back_sub.apply(background, learningRate=1)
 
 cap = cv2.VideoCapture(video_path)
-out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (1152, 2160))
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (2160, 1152))
 tracker = ObjectTracker()
 
 while (cap.isOpened()):
@@ -132,8 +136,10 @@ while (cap.isOpened()):
     # Show combined image
     row_one = np.hstack((frame, diff_3d, blur_3d))
     row_two = np.hstack((thresh_3d, edges_3d, image_contours))
-    # row_three = np.hstack(())
     combined_image = np.vstack((row_one, row_two))
+    # print("Frame dimensions:", frame.shape[:2])
+    # print("Combined image dimensions:", combined_image.shape[:2])
+
     cv2.imshow('Combined Image', combined_image)
     out.write(combined_image)
     
