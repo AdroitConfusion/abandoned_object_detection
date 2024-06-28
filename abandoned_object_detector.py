@@ -28,18 +28,23 @@ if __name__ == "__main__":
 
 
     # Calculate paths
-    example_no = 'example 3'
+    example_no = 'example 2'
     base_path = 'examples'
     background_path = path.join(base_path, example_no, 'bg.png')
     video_path = path.join(base_path, example_no, 'video.avi')
     output_path = path.join(base_path, example_no, 'output.mp4')
 
+    # Preprocess background image
     background = cv2.imread(background_path)
     if args.train_mask:
         background = apply_train_mask(background)
     background_gray = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
+    background_hist = cv2.equalizeHist(background_gray)
+    background_blur = cv2.GaussianBlur(background_hist, (7, 7), 0)
+    preproc_background = cv2.medianBlur(background_blur, 5) 
 
-
+    
+    # Set up video reader
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
     if not ret:
@@ -47,6 +52,7 @@ if __name__ == "__main__":
         exit()
     frame_height, frame_width, _ = frame.shape
 
+    # Set up video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_width * 3, frame_height * 2))
     tracker = ObjectTracker()
@@ -60,18 +66,22 @@ if __name__ == "__main__":
             frame = apply_train_mask(frame)
         
         frame_height, frame_width, _ = frame.shape
-        # print(frame_height, frame_width)
+
+        # Convert to grayscale
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # Background Subtraction
-        frame_diff = cv2.absdiff(background_gray, frame_gray)
-        # frame_diff = back_sub.apply(frame, learningRate=0)
+        # Histogram Equalization
+        frame_hist = cv2.equalizeHist(frame_gray)
 
         # Blur
-        frame_blur = cv2.GaussianBlur(frame_diff, (7, 7), 0)
+        frame_blur = cv2.GaussianBlur(frame_hist, (7, 7), 0)
+        preproc_frame = cv2.medianBlur(frame_blur, 5)     
 
+        # Background Subtraction
+        frame_diff = cv2.absdiff(preproc_background, preproc_frame)
+        
         # Threshold
-        _, thresh = cv2.threshold(frame_blur, 80, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(frame_diff, 80, 255, cv2.THRESH_BINARY)
         # thresh = cv2.adaptiveThreshold(frame_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
         # Morphological Operations
@@ -112,7 +122,7 @@ if __name__ == "__main__":
         for cnt in contours:
             contour_area = cv2.contourArea(cnt)
             
-            if 500 < contour_area < 100000:
+            if 1000 < contour_area < 100000:
                 count += 1
 
                 (x, y, w, h) = cv2.boundingRect(cnt)
@@ -133,7 +143,7 @@ if __name__ == "__main__":
 
         # Convert 2D images to 3D
         diff_3d = cv2.cvtColor(frame_diff, cv2.COLOR_GRAY2BGR)
-        blur_3d = cv2.cvtColor(frame_blur, cv2.COLOR_GRAY2BGR)
+        blur_3d = cv2.cvtColor(preproc_frame, cv2.COLOR_GRAY2BGR)
         thresh_3d = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
         edges_3d = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
 
